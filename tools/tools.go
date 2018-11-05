@@ -11,11 +11,44 @@ import (
 	"strings"
 
 	"github.com/nfnt/resize"
+
+	"github.com/rwcarlsen/goexif/exif"
+	"github.com/rwcarlsen/goexif/mknote"
+	"github.com/rwcarlsen/goexif/tiff"
 )
 
 const portrait string = "portrait"
 const landscape string = "landscape"
 const square string = "square"
+
+func GetExif(imagePath string) *exif.Exif {
+	f, err := os.Open(imagePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Optionally register camera makenote data parsing - currently Nikon and
+	// Canon are supported.
+	exif.RegisterParsers(mknote.All...)
+
+	exifData, err := exif.Decode(f)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return exifData
+}
+
+func GetExifValue(exif *exif.Exif, value exif.FieldName) (tag string) {
+	var tiffTag *tiff.Tag
+	tiffTag, err := exif.Get(value)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return fmt.Sprintf("%v", tiffTag)
+}
 
 func GetImageDimension(imagePath string) (int, int) {
 	file, err := os.Open(imagePath)

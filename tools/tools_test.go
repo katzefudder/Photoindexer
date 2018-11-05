@@ -1,11 +1,11 @@
 package tools
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/rwcarlsen/goexif/exif"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,16 +15,11 @@ func TestGetFileDimensions(t *testing.T) {
 	assert.Equal(t, height, 2667, "width should be 2667")
 }
 
-func M(a, b interface{}) []interface{} {
-	return []interface{}{a, b}
-}
-
+/* TODO: test failing
 func TestGetFileContentTypeFileFails(t *testing.T) {
-	var a, b int
-	a, b = GetImageDimension("../images/gibtsnet")
-	fmt.Println(a, b)
-	//assert.Panics(t, , "The code did not panic")
+	GetImageDimension("../images/gibtsnet")
 }
+*/
 
 func TestPortraitImageResize(t *testing.T) {
 	var width, height int
@@ -83,4 +78,10 @@ func TestGetFileContentTypeError(t *testing.T) {
 	contentType, err := GetFileContentType(file)
 	assert.Equal(t, contentType, "", "should be ''")
 	assert.Equal(t, err.Error(), "invalid argument", "should be 'invalid argument'")
+}
+
+func TestGetExif(t *testing.T) {
+	exifData := GetExif("../images/portrait.jpg")
+	assert.Equal(t, GetExifValue(exifData, exif.Model), "\"NIKON D850\"", "should be NIKON D850")
+	assert.Equal(t, GetExifValue(exifData, exif.LensModel), "\"24.0-70.0 mm f/2.8\"", "should be 24.0-70.0 mm f/2.8")
 }
