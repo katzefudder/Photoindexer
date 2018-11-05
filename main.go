@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	tools "github.com/Photoindexer/tools"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
-	tools "photoindexer/tools"
 )
 
 var BaseDir = ""
