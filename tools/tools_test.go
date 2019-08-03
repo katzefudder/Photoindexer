@@ -1,36 +1,30 @@
 package tools
 
 import (
-	"os"
+	"fmt"
 	"path/filepath"
+	"sync"
 	"testing"
 
-	"github.com/rwcarlsen/goexif/exif"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetFileDimensions(t *testing.T) {
-	width, height := GetImageDimension("../images/landscape.jpg")
+	filename, _ := filepath.Abs("../images/landscape.jpg")
+	width, height := getImageDimension(filename)
 	assert.Equal(t, width, 4000, "width should be 4000")
 	assert.Equal(t, height, 2667, "width should be 2667")
 }
-
-/* TODO: test failing
-func TestGetFileContentTypeFileFails(t *testing.T) {
-	GetImageDimension("../images/gibtsnet")
-}
-*/
 
 func TestPortraitImageResize(t *testing.T) {
 	var width, height int
 	var orientation string
 
-	absPath, err := filepath.Abs("../images/portrait.jpg")
-	if err != nil {
-		panic(err)
-	}
+	absPath, _ := filepath.Abs("../images/portrait.jpg")
 
-	width, height, orientation = ImageResize(absPath, "./testing", "", 100, 100)
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	width, height, orientation = imageResize(absPath, "./testing", "", 100, 100, wg)
 	assert.Equal(t, width, 100, "width should be 100")
 	assert.Equal(t, height, 100, "height should be 100")
 	assert.Equal(t, orientation, "portrait", "orientation should be portrait")
@@ -40,48 +34,65 @@ func TestSquareImageResize(t *testing.T) {
 	var width, height int
 	var orientation string
 
-	absPath, err := filepath.Abs("../images/square.jpg")
-	if err != nil {
-		panic(err)
-	}
+	absPath, _ := filepath.Abs("../images/square.jpg")
 
-	width, height, orientation = ImageResize(absPath, "./testing", "", 100, 100)
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	width, height, orientation = imageResize(absPath, "./testing", "", 100, 100, wg)
 	assert.Equal(t, width, 100, "width should be 100")
 	assert.Equal(t, height, 100, "height should be 100")
 	assert.Equal(t, orientation, "square", "orientation should be square")
 }
 
-func TestLandscapeImageResize(t *testing.T) {
+func TestLandscapeimageResize(t *testing.T) {
 	var width, height int
 	var orientation string
 
-	absPath, err := filepath.Abs("../images/landscape.jpg")
-	if err != nil {
-		panic(err)
-	}
+	absPath, _ := filepath.Abs("../images/landscape.jpg")
 
-	width, height, orientation = ImageResize(absPath, "./testing", "", 3000, 3000)
+	wg := new(sync.WaitGroup)
+	wg.Add(1)
+	width, height, orientation = imageResize(absPath, "./testing", "", 3000, 3000, wg)
 	assert.Equal(t, width, 3000, "width should be 3000")
 	assert.Equal(t, height, 3000, "height should be 2000")
 	assert.Equal(t, orientation, "landscape", "orientation should be landscape")
 }
 
 func TestGetFileContentType(t *testing.T) {
-	file, err := os.Open("../images/portrait.jpg")
-	contentType, err := GetFileContentType(file)
+	absPath, _ := filepath.Abs("../images/portrait.jpg")
+	contentType := getFileContentType(absPath)
 	assert.Equal(t, contentType, "image/jpeg", "should be image/jpeg")
-	assert.Equal(t, err, nil, "should be no error")
 }
 
-func TestGetFileContentTypeError(t *testing.T) {
-	file, err := os.Open("../images/gibtsnet.jpg")
-	contentType, err := GetFileContentType(file)
-	assert.Equal(t, contentType, "", "should be ''")
-	assert.Equal(t, err.Error(), "invalid argument", "should be 'invalid argument'")
+func TestGetImageOrientation(t *testing.T) {
+	absPath, _ := filepath.Abs("../images/portrait.jpg")
+	imgWidth, imgHeight := getImageDimension(absPath)
+	orientation := getImageOrientation(imgWidth, imgHeight)
+	assert.Equal(t, orientation, "portrait")
+
+	absPath, _ = filepath.Abs("../images/landscape.jpg")
+	imgWidth, imgHeight = getImageDimension(absPath)
+	orientation = getImageOrientation(imgWidth, imgHeight)
+	assert.Equal(t, orientation, "landscape")
 }
 
-func TestGetExif(t *testing.T) {
-	exifData := GetExif("../images/portrait.jpg")
-	assert.Equal(t, GetExifValue(exifData, exif.Model), "\"NIKON D850\"", "should be NIKON D850")
-	assert.Equal(t, GetExifValue(exifData, exif.LensModel), "\"24.0-70.0 mm f/2.8\"", "should be 24.0-70.0 mm f/2.8")
+func TestOpenNotExistingFile(t *testing.T) {
+	absPath, _ := filepath.Abs("../images/gibtsnet.jpg")
+	assert.Panics(t, func() { Open(absPath) })
+}
+
+func TestGetIptcFromJpg(t *testing.T) {
+	absPath, _ := filepath.Abs("../images/landscape.jpg")
+	data := getIptc(absPath)
+	fmt.Printf("%#v\n", data)
+	assert.Equal(t, data.ObjectName, "DEL2 Playoff-Viertelfinale - Spiel 4 - Rote Teufel EC Bad Nauhei")
+}
+
+func TestGetIPTCFromNotExistingFile(t *testing.T) {
+	absPath, _ := filepath.Abs("../images/gibtsnet.jpg")
+	assert.Panics(t, func() { getIptc(absPath) })
+}
+
+func TestGetIptc(t *testing.T) {
+	// TODO: impelement
 }
